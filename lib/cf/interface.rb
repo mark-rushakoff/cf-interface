@@ -1,7 +1,10 @@
 require "cf/interface/version"
+require "cf/interface/interface"
 
 module CF
   module Interface
-    # Your code goes here...
+    def self.new
+      ::CF::Interface::Interface.new
+    end
   end
 end
