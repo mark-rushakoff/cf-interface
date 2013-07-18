@@ -1,5 +1,17 @@
 require "spec_helper"
-require "cf/interface/interface"
+require "cf/interface"
+
+describe CF::Interface do
+  describe '.new' do
+    it "is shorthand for directly creating an implementation of Interface" do
+      message_bus = double(::CfMessageBus::MessageBus)
+      an_interface = double(::CF::Interface::Interface)
+      CF::Interface::Interface.should_receive(:new).with(message_bus).and_return(an_interface)
+
+      expect(CF::Interface.new(message_bus)).to equal(an_interface)
+    end
+  end
+end
 
 describe CF::Interface::Interface do
   let(:message_bus) { double(::CfMessageBus::MessageBus) }
