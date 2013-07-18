@@ -22,6 +22,17 @@ module CF::Interface
       message_bus.publish("droplet.updated", droplet_updated_message.serialize)
     end
 
+    def on_droplet_stop(&blk)
+      message_bus.subscribe("dea.stop") do |serialized_message|
+        message = ::CF::Interface::DropletStopMessage.deserialize(serialized_message)
+        blk.call(message)
+      end
+    end
+
+    def broadcast_droplet_stop(droplet_stop_message)
+      message_bus.publish("dea.stop", droplet_stop_message.serialize)
+    end
+
     private
     attr_reader :message_bus
   end

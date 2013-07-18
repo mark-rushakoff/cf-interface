@@ -41,4 +41,24 @@ describe CF::Interface::Interface do
       end
     end
   end
+
+  describe "droplet_stop" do
+    describe "#broadcast_droplet_stop" do
+      let(:droplet_stop_message) { double(::CF::Interface::DropletStopMessage) }
+
+      it "publishes on the dea.stop channel" do
+        droplet_stop_message.stub(:serialize).and_return({foo: "bar"})
+        message_bus.should_receive(:publish).with("dea.stop", foo: "bar")
+        interface.broadcast_droplet_stop(droplet_stop_message)
+      end
+    end
+
+    describe "#on_droplet_updated" do
+      it "subscribes to droplet.updated" do
+        callback = Proc.new { |_| }
+        message_bus.should_receive(:subscribe).with("dea.stop", &callback)
+        interface.on_droplet_stop(&callback)
+      end
+    end
+  end
 end
