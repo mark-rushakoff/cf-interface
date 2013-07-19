@@ -3,7 +3,7 @@ require "cf/interface/broadcastable"
 
 module CF::Interface
   DropletUpdatedMessage = Struct.new(:app_guid, :cc_partition) do
-    # taken from VCAP::CloudController::DeaClient#stop
+    # taken from VCAP::CloudController::HealthManagerClient#notify_app_updated
     include Broadcastable
     extend Receivable
 
