@@ -14,9 +14,9 @@ module CF::Interface
       message_bus.publish(message.class.channel, message.serialize)
     end
 
-    def on_receive(message_class, &blk)
+    def on_receive(message_class)
       message_bus.subscribe(message_class.channel) do |serialized|
-        blk.call(message_class.deserialize(serialized))
+        yield message_class.deserialize(serialized)
       end
     end
 
