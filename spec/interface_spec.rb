@@ -22,43 +22,48 @@ describe CF::Interface::Interface do
     expect(interface.connected?).to eq("foobar")
   end
 
-  describe "droplet_updated" do
-    describe "#broadcast_droplet_updated" do
-      let(:droplet_updated_message) { double(::CF::Interface::DropletUpdatedMessage) }
+  describe "#publish_message" do
+    let(:fake_message_class) do
+      Class.new do
+        def self.channel
+          "the_channel"
+        end
 
-      it "publishes on the droplet.updated channel" do
-        droplet_updated_message.stub(:serialize).and_return({foo: "bar"})
-        message_bus.should_receive(:publish).with("droplet.updated", foo: "bar")
-        interface.broadcast_droplet_updated(droplet_updated_message)
+        def serialize
+          "serialized_data"
+        end
       end
     end
 
-    describe "#on_droplet_updated" do
-      it "subscribes to droplet.updated" do
-        callback = Proc.new { |_| }
-        message_bus.should_receive(:subscribe).with("droplet.updated", &callback)
-        interface.on_droplet_updated(&callback)
-      end
+    it "publishes the serialized message on the message's channel" do
+      message_bus.should_receive(:publish).with("the_channel", "serialized_data")
+      interface.publish_message(fake_message_class.new)
     end
   end
 
-  describe "droplet_stop" do
-    describe "#broadcast_droplet_stop" do
-      let(:droplet_stop_message) { double(::CF::Interface::DropletStopMessage) }
+  describe "#on_receive" do
+    let(:fake_message_class) do
+      Class.new do
+        def self.channel
+          "the_channel"
+        end
 
-      it "publishes on the dea.stop channel" do
-        droplet_stop_message.stub(:serialize).and_return({foo: "bar"})
-        message_bus.should_receive(:publish).with("dea.stop", foo: "bar")
-        interface.broadcast_droplet_stop(droplet_stop_message)
+        def self.deserialize(str)
+          str.upcase
+        end
       end
     end
 
-    describe "#on_droplet_updated" do
-      it "subscribes to droplet.updated" do
-        callback = Proc.new { |_| }
-        message_bus.should_receive(:subscribe).with("dea.stop", &callback)
-        interface.on_droplet_stop(&callback)
+    it "subscribes to the class's channel and deserializes" do
+      called = false
+      blk = Proc.new do |deserialized|
+        expect(deserialized).to eq("SOME TEXT")
+        called = true
       end
+      message_bus.should_receive(:subscribe).with("the_channel").and_yield("some text")
+      interface.on_receive(fake_message_class, &blk)
+
+      expect(called).to eq(true)
     end
   end
 end

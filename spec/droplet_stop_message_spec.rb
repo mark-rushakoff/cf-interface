@@ -2,40 +2,27 @@ require "spec_helper"
 require "cf/interface/droplet_stop_message"
 
 describe CF::Interface::DropletStopMessage do
-  describe "serialization" do
-    it "can round trip properly" do
-      original = described_class.new("an app guid")
-      clone = described_class.deserialize(original.serialize)
+  subject(:message) { described_class.new("an app guid") }
 
-      expect(original).not_to equal(clone)
-      expect(clone.app_guid).to eq("an app guid")
-    end
+  it "has the right channel" do
+    expect(described_class.channel).to eq("dea.stop")
   end
-end
 
-describe CF::Interface::DropletStopInstancesMessage do
-  describe "serialization" do
-    it "can round trip properly" do
-      original = described_class.new("an app guid", %w(instance-guid1 instance-guid2))
-      clone = described_class.deserialize(original.serialize)
+  describe "with a message bus" do
+    let(:message_bus) { ::CfMessageBus::MockMessageBus.new }
+    let(:interface) { ::CF::Interface.new(message_bus) }
 
-      expect(original).not_to equal(clone)
-      expect(clone.app_guid).to eq("an app guid")
-      expect(clone.instance_guids).to eq(%w(instance-guid1 instance-guid2))
-    end
-  end
-end
+    it "can be transmitted" do
+      interface = CF::Interface.new(CfMessageBus::MockMessageBus.new)
 
-describe CF::Interface::DropletStopIndicesMessage do
-  describe "serialization" do
-    it "can round trip properly" do
-      original = described_class.new("an app guid", "app version", [3, 4])
-      clone = described_class.deserialize(original.serialize)
+      received = false
+      described_class.on_receive(interface) do |droplet_stop_message|
+        received = true
+        expect(droplet_stop_message.app_guid).to eq("an app guid")
+      end
 
-      expect(original).not_to equal(clone)
-      expect(clone.app_guid).to eq("an app guid")
-      expect(clone.app_version).to eq("app version")
-      expect(clone.instance_indices).to eq([3, 4])
+      message.broadcast(interface)
+      expect(received).to eq(true)
     end
   end
 end
