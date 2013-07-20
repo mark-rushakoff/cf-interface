@@ -28,10 +28,9 @@ If you try to broadcast an invalid message, you will raise an instance of `::Cf:
 
 Messages have a class method `.on_receive` that takes an interface and a block.
 When a valid message is received on that channel, the provided block is called with the instance of that message or the deserialization error as its argument.
-Exactly one of those arguments should be nil.
+Exactly one of those arguments will be nil.
 
 ```ruby
-
 ::Cf::Interface::ComponentAnnouncementMessage.on_receive do |announcement, error|
   if error
     logger.fatal("Can't recover from parse failure: #{error}")
@@ -41,6 +40,8 @@ Exactly one of those arguments should be nil.
   end
 end
 ```
+
+If there was a deserialization error, error will be an instance of `::CF::Interface::DeserializationError` (which has a `#original` method wrapping the underlying error for why the deserialization failed).
 
 ### Extending the gem
 
