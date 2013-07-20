@@ -1,29 +1,50 @@
 # Cf::Interface
 
-TODO: Write a gem description
+This gem is intended to be used as a single point of contact for inter-component communication in Cloud Foundry.
 
-## Installation
+## Overview
 
-Add this line to your application's Gemfile:
+### Using the gem
 
-    gem 'cf-interface'
+#### Sending a message
 
-And then execute:
+Create the instance of the message representing the action you want to take, e.g. `ComponentAnnouncementMessage`.
+Then call its `#broadcast` method, passing in an instance of `Cf::Interface::Interface`.
 
-    $ bundle
+```ruby
+message = ::Cf::Interface::ComponentAnnouncementMessage.new(
+  component_type: "easter_egg",
+  index: my_index,
+  host: my_host,
+  credentials: credential_hash
+)
 
-Or install it yourself as:
+message.broadcast(interface)
+```
 
-    $ gem install cf-interface
+If you try to broadcast an invalid message, you will raise an instance of `::Cf::Interface::SerializationError`.
 
-## Usage
+#### Subscribing to a message
 
-TODO: Write usage instructions here
+Messages have a class method `.on_receive` that takes an interface and a block.
+When a valid message is received on that channel, the provided block is called with the instance of that message as its argument.
 
-## Contributing
+```ruby
 
-1. Fork it
-2. Create your feature branch (`git checkout -b my-new-feature`)
-3. Commit your changes (`git commit -am 'Add some feature'`)
-4. Push to the branch (`git push origin my-new-feature`)
-5. Create new Pull Request
+::Cf::Interface::ComponentAnnouncementMessage.on_receive do |announcement|
+  logger.info("Received announcement from #{announcement.component_type}/#{announcement.index}")
+end
+```
+
+### Extending the gem
+
+#### Adding a message
+
+Under most circumstances, a message should be able to `include Broadcastable` to provide the `#broadcast` method and `extend Receivable` to provide the `.on_receive` method.
+
+Most messages will have the following customized methods:
+
+* `#serialize`: serializes the given object to a string
+* `#valid?`: returns true if the object is suitable for serialization
+* `.deserialize`: given a string, returns a new instance of the message. Should raise an exception if the deserialization is unsuccessful.
+* `.channel`: (An implementation detail of using CF Message Bus.)
