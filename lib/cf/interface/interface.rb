@@ -18,7 +18,11 @@ module CF::Interface
 
     def on_receive(message_class)
       message_bus.subscribe(message_class.channel) do |serialized|
-        yield message_class.deserialize(serialized)
+        begin
+          yield message_class.deserialize(serialized), nil
+        rescue
+          yield nil, DeserializationError.new("Error deserializing")
+        end
       end
     end
 

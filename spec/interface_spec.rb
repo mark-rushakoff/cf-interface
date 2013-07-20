@@ -1,6 +1,7 @@
 require "spec_helper"
 require "cf/interface"
 require "cf/interface/serialization_error"
+require "cf/interface/deserialization_error"
 
 describe CF::Interface do
   describe '.new' do
@@ -70,8 +71,27 @@ describe CF::Interface::Interface do
 
     it "subscribes to the class's channel and deserializes" do
       called = false
-      blk = Proc.new do |deserialized|
+      blk = Proc.new do |deserialized, error|
         expect(deserialized).to eq("SOME TEXT")
+        expect(error).to be_nil
+        called = true
+      end
+      message_bus.should_receive(:subscribe).with("the_channel").and_yield("some text")
+      interface.on_receive(fake_message_class, &blk)
+
+      expect(called).to eq(true)
+    end
+
+    it "yields an error when deserialization fails" do
+      def fake_message_class.deserialize(_)
+        raise "can't deserialize"
+      end
+
+      called = false
+      blk = Proc.new do |deserialized, error|
+        expect(deserialized).to be_nil
+        expect(error).to be_a(::CF::Interface::DeserializationError)
+        expect(error.original.message).to match("can't deserialize")
         called = true
       end
       message_bus.should_receive(:subscribe).with("the_channel").and_yield("some text")
