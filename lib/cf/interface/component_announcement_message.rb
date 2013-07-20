@@ -14,6 +14,12 @@ module CF::Interface
       @index = opts.delete(:index)
       @host = opts.delete(:host)
       @credentials = opts.delete(:credentials)
+      raise ArgumentError.new("unknown options: #{opts.keys.join(", ")}") unless opts.empty?
+    end
+
+    def valid?
+      !(component_type.nil? || index.nil? || host.nil? ||
+        credentials.nil? || !credentials.has_key?(:user) || !credentials.has_key?(:password))
     end
 
     def serialize
@@ -29,12 +35,12 @@ module CF::Interface
       def deserialize(serialized)
         parsed = JSON.parse(serialized)
         new(
-          component_type: parsed["type"],
-          index: parsed["index"],
-          host: parsed["host"],
+          component_type: parsed.fetch("type"),
+          index: parsed.fetch("index"),
+          host: parsed.fetch("host"),
           credentials: {
-            user: parsed["credentials"]["user"],
-            password: parsed["credentials"]["password"],
+            user: parsed.fetch("credentials").fetch("user"),
+            password: parsed.fetch("credentials").fetch("password")
           }
         )
       end
