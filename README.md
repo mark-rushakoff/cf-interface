@@ -27,12 +27,18 @@ If you try to broadcast an invalid message, you will raise an instance of `::Cf:
 #### Subscribing to a message
 
 Messages have a class method `.on_receive` that takes an interface and a block.
-When a valid message is received on that channel, the provided block is called with the instance of that message as its argument.
+When a valid message is received on that channel, the provided block is called with the instance of that message or the deserialization error as its argument.
+Exactly one of those arguments should be nil.
 
 ```ruby
 
-::Cf::Interface::ComponentAnnouncementMessage.on_receive do |announcement|
-  logger.info("Received announcement from #{announcement.component_type}/#{announcement.index}")
+::Cf::Interface::ComponentAnnouncementMessage.on_receive do |announcement, error|
+  if error
+    logger.fatal("Can't recover from parse failure: #{error}")
+    abort
+  else
+    logger.info("Received announcement from #{announcement.component_type}/#{announcement.index}")
+  end
 end
 ```
 
