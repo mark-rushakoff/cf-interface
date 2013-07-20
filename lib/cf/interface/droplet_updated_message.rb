@@ -14,6 +14,11 @@ module CF::Interface
       }.to_json
     end
 
+    def valid?
+      warn "Defaulting valid to true..."
+      true
+    end
+
     class << self
       def deserialize(serialized)
         parsed = JSON.parse(serialized)

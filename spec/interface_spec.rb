@@ -1,5 +1,6 @@
 require "spec_helper"
 require "cf/interface"
+require "cf/interface/serialization_error"
 
 describe CF::Interface do
   describe '.new' do
@@ -32,12 +33,25 @@ describe CF::Interface::Interface do
         def serialize
           "serialized_data"
         end
+
+        def valid?
+          true
+        end
       end
     end
 
     it "publishes the serialized message on the message's channel" do
       message_bus.should_receive(:publish).with("the_channel", "serialized_data")
       interface.publish_message(fake_message_class.new)
+    end
+
+    it "raises a SerializationError when the message is invalid" do
+      invalid_message = fake_message_class.new
+      invalid_message.stub(:valid? => false)
+
+      expect {
+        interface.publish_message(invalid_message)
+      }.to raise_error(::CF::Interface::SerializationError)
     end
   end
 

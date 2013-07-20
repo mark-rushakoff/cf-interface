@@ -1,4 +1,5 @@
 require "cf_message_bus/message_bus"
+require "cf/interface/serialization_error"
 
 module CF::Interface
   class Interface
@@ -11,6 +12,7 @@ module CF::Interface
     end
 
     def publish_message(message)
+      raise SerializationError, "Message not valid for serialization: #{message.inspect}" unless message.valid?
       message_bus.publish(message.class.channel, message.serialize)
     end
 
