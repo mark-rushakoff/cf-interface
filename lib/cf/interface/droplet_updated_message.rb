@@ -15,8 +15,7 @@ module CF::Interface
     end
 
     def valid?
-      warn "Defaulting valid to true..."
-      true
+      !(app_guid.nil? || cc_partition.nil?)
     end
 
     class << self
