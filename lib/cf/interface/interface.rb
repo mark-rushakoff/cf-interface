@@ -1,5 +1,6 @@
 require "cf_message_bus/message_bus"
 require "cf/interface/serialization_error"
+require "cf/interface/deserialization_error"
 
 module CF::Interface
   class Interface
@@ -21,7 +22,7 @@ module CF::Interface
         begin
           yield message_class.deserialize(serialized), nil
         rescue
-          yield nil, DeserializationError.new("Error deserializing")
+          yield nil, DeserializationError.new("Error deserializing: #{$!.message}")
         end
       end
     end

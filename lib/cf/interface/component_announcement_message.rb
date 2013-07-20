@@ -27,7 +27,7 @@ module CF::Interface
         type: component_type,
         index: index,
         host: host,
-        credentials: credentials
+        credentials: [credentials[:user], credentials[:password]]
       }.to_json
     end
 
@@ -39,8 +39,9 @@ module CF::Interface
           index: parsed.fetch("index"),
           host: parsed.fetch("host"),
           credentials: {
-            user: parsed.fetch("credentials").fetch("user"),
-            password: parsed.fetch("credentials").fetch("password")
+            # credentials is implemented elsewhere as an array of [user, password]
+            user: parsed.fetch("credentials").fetch(0),
+            password: parsed.fetch("credentials").fetch(1)
           }
         )
       end

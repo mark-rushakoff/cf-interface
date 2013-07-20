@@ -18,13 +18,10 @@ describe CF::Interface::ComponentAnnouncementMessage do
 
   let(:valid_serialization_hash) do
     {
-      type: "type",
+      type: "component_type",
       index: 0,
       host: "192.0.2.1",
-      credentials: {
-        user: "user",
-        password: "password"
-      }
+      credentials: ["user", "password"]
     }
   end
 
@@ -90,8 +87,8 @@ describe CF::Interface::ComponentAnnouncementMessage do
       interface = CF::Interface.new(CfMessageBus::MockMessageBus.new)
 
       received = false
-      described_class.on_receive(interface) do |component_announcement_message|
-        received = true
+      described_class.on_receive(interface) do |component_announcement_message, error|
+        expect(error).to be_nil
         expect(component_announcement_message.component_type).to eq("component_type")
         expect(component_announcement_message.index).to eq(99)
         expect(component_announcement_message.host).to eq("192.0.2.1")
@@ -99,6 +96,7 @@ describe CF::Interface::ComponentAnnouncementMessage do
           user: "a_username",
           password: "a_password"
         )
+        received = true
       end
 
       message.broadcast(interface)
