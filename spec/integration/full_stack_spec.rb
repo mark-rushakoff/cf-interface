@@ -32,7 +32,7 @@ module ::CF::Interface::NatsHelper
   end
 
   def build_interface
-    message_bus = CfMessageBus::MessageBus.new(uri: nats_uri)
+    message_bus = CfMessageBus::MessageBus.new(uri: nats_uri, logger: FakeLogger.new)
     wait_for { message_bus.connected? }
     ::CF::Interface.new(message_bus)
   end
@@ -52,6 +52,14 @@ module ::CF::Interface::NatsHelper
           break
         rescue Errno::ECONNREFUSED
         end
+      end
+    end
+  end
+
+  class FakeLogger
+    %w(debug info warn error fatal).each do |level|
+      define_method(level) do |msg|
+        puts msg
       end
     end
   end
@@ -86,13 +94,42 @@ describe "The full stack" do
         interface = build_interface
 
         ::CF::Interface::CollectorPingMessage.on_receive(interface) do |message, error|
-          expect(message.current_time.to_i).to eq(1)
           expect(error).to be_nil
+          expect(message.current_time.to_i).to eq(1)
           received_message = true
         end
 
         ping_message = ::CF::Interface::CollectorPingMessage.new(Time.at(1))
         ping_message.broadcast(interface)
+
+        # without this wait, the EM loop will immediately exit and the receive callback won't happen
+        wait_for(5) { received_message }
+      end
+
+      # without this wait, the outer loop will immediately exit without waiting for the EM loop
+      wait_for(5) { received_message }
+      expect(received_message).to eq(true)
+    end
+
+    it "can do a basic pub/sub with a real message that serializes as JSON" do
+      pending "Need to fix weird interactions (serializing keys, automatic JSON) with CfMessageBus"
+      received_message = false
+
+      in_em do
+        interface = build_interface
+
+        ::CF::Interface::DropletUpdatedMessage.on_receive(interface) do |message, error|
+          expect(error).to be_nil
+          expect(message.app_guid).to eq("the best app guid ever")
+          expect(message.cc_partition).to eq("a partition that nobody will use")
+          received_message = true
+        end
+
+        updated_message = ::CF::Interface::DropletUpdatedMessage.new(
+          "the best app guid ever",
+          "a partition that nobody will use"
+        )
+        updated_message.broadcast(interface)
 
         # without this wait, the EM loop will immediately exit and the receive callback won't happen
         wait_for(5) { received_message }
