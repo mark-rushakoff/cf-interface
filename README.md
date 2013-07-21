@@ -2,6 +2,17 @@
 
 This gem is intended to be used as a single point of contact for inter-component communication in Cloud Foundry.
 
+("Component" in this README refers to a backend component such as Cloud Controller, DEA, or Health Manager.)
+
+## Advantages over the current architecture
+
+* Components can work with **objects** instead of with arbitrary hashes, reducing component code complexity
+* Message serialization is no longer a component concern
+* Provides a single canonical source of how multiple components can interact with each other
+* Simplifies tests in components -- instead of writing tests involving the communication layer, write tests about the message you want to send or receive
+  * Tests around these message objects build confidence in the communication between components, especially in the absence of good inter-component integration tests
+* Simplifies writing tooling for the system
+
 ## Overview
 
 ### Using the gem
