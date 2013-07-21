@@ -55,3 +55,24 @@ Most messages will have the following customized methods:
 * `#valid?`: returns true if the object is suitable for serialization
 * `.deserialize`: given a string, returns a new instance of the message. Should raise an exception if the deserialization is unsuccessful.
 * `.channel`: (An implementation detail of using CF Message Bus.)
+
+#### Testing a new message
+
+I like [spec/component_announcement_message_spec.rb](spec/component_announcement_message_spec.rb) as a good example of full specs for a message.
+It covers:
+
+* Capturing the correct NATS channel for compatibility with existing messages and documentation purposes
+* Error condition when initializing with extra data
+* Validating the message (important for error conditions on serialization)
+* Raising an error when deserializing an invalid serialization
+* Broadcasting and receiving the message with a mock message bus to test serialization and deserialization together
+
+## TODO
+
+CF Interface currently only covers broadcasting and receiving messages.
+The following functionality is still missing:
+
+* Requesting a particular message on a private inbox
+* Synchronously requesting a message with timeout or max count
+* Strategy to split "polymorphic" messages (e.g. DropletStop) into separate channels while maintaining backwards compatibility (or is BC even needed? Maybe we can allow a breaking change for this?)
+* Extend CfMessageBus to not make assumptions about (de)serialization; that responsibility should fall on this layer
