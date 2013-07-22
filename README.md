@@ -1,6 +1,7 @@
 # Cf::Interface
 
 This gem is intended to be used as a single point of contact for inter-component communication in Cloud Foundry.
+Instead of transmitting hashes with arbitrary keys and values, you work with first-class objects that do not expose implementation details of inter-component communication.
 
 ("Component" in this README refers to a backend component such as Cloud Controller, DEA, or Health Manager.)
 
@@ -11,7 +12,8 @@ This gem is intended to be used as a single point of contact for inter-component
 * Provides a single canonical source of how multiple components can interact with each other
 * Simplifies tests in components -- instead of writing tests involving the communication layer, write tests about the message you want to send or receive
   * Tests around these message objects build confidence in the communication between components, especially in the absence of good inter-component integration tests
-* Simplifies writing tooling for the system
+* Simplifies writing tooling involving Cloud Foundry backend components
+* When a message needs to change or a new message is needed, the gem is the single canonical source of truth (instead of multiple components' source code)
 
 ## Overview
 
@@ -42,7 +44,7 @@ When a valid message is received on that channel, the provided block is called w
 Exactly one of those arguments will be nil.
 
 ```ruby
-::Cf::Interface::ComponentAnnouncementMessage.on_receive do |announcement, error|
+::Cf::Interface::ComponentAnnouncementMessage.on_receive(interface) do |announcement, error|
   if error
     logger.fatal("Can't recover from parse failure: #{error}")
     abort
@@ -52,7 +54,7 @@ Exactly one of those arguments will be nil.
 end
 ```
 
-If there was a deserialization error, error will be an instance of `::CF::Interface::DeserializationError` (which has a `#original` method wrapping the underlying error for why the deserialization failed).
+If there was a deserialization error, `error` will be an instance of `::CF::Interface::DeserializationError` (which has a `#original` method wrapping the underlying error for why the deserialization failed).
 
 ### Extending the gem
 
